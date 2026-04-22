@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biomarker → 治療意思決定シミュレーター</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafaf8;--card:#fff;--border:#e5e3db;--blue:#1a5fa5;--green:#0d7a5f;--red:#b83030;--orange:#c07618;--gray:#73716a;--lightblue:#e8f0fb;--lightgreen:#e4f5ef;--lightred:#fce8e8;--lightorange:#fdf3e1;--dark:#222220}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Noto Sans JP",-apple-system,sans-serif;background:var(--bg);color:var(--dark);line-height:1.6}
+.app{max-width:420px;margin:0 auto;padding:1rem 1rem 2rem}
+header{text-align:center;padding:1.25rem 0 1rem;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
+header h1{font-size:1.15rem;font-weight:600;color:var(--blue);letter-spacing:-0.02em}
+header p{font-size:0.72rem;color:var(--gray);margin-top:0.2rem}
+.section-label{font-size:0.7rem;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem}
+.input-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem}
+.input-card h3{font-size:0.85rem;font-weight:600;color:var(--dark);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem}
+.input-card h3 .tag{font-size:0.6rem;padding:2px 6px;border-radius:4px;font-weight:500}
+.tag-germ{background:var(--lightblue);color:var(--blue)}
+.tag-tumor{background:var(--lightorange);color:var(--orange)}
+.tag-ihc{background:var(--lightgreen);color:var(--green)}
+.toggle-row{display:flex;gap:6px;margin-bottom:0.5rem}
+.toggle-btn{flex:1;padding:0.55rem 0.25rem;border:1.5px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;font-size:0.78rem;font-weight:500;color:var(--gray);transition:all 0.2s;font-family:inherit;text-align:center}
+.toggle-btn.active{border-color:var(--blue);background:var(--lightblue);color:var(--blue);font-weight:600}
+.toggle-btn:hover:not(.active){background:#f5f5f0}
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-row input[type=range]{flex:1;-webkit-appearance:none;height:5px;border-radius:3px;background:var(--border);outline:none}
+.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.15)}
+.slider-val{font-size:0.85rem;font-weight:600;min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
+.sub-note{font-size:0.68rem;color:var(--gray);margin-top:0.3rem}
+.results{margin-top:1.25rem}
+.result-card{border-radius:10px;padding:1rem;margin-bottom:0.6rem;border-left:4px solid}
+.result-card h4{font-size:0.8rem;font-weight:600;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.35rem}
+.result-card ul{list-style:none;padding:0}
+.result-card li{font-size:0.78rem;padding:0.2rem 0;padding-left:1rem;position:relative;color:#444}
+.result-card li::before{content:"→";position:absolute;left:0;color:inherit;font-weight:600}
+.r-treatment{background:var(--lightblue);border-color:var(--blue)}
+.r-treatment h4{color:var(--blue)}
+.r-prevention{background:var(--lightgreen);border-color:var(--green)}
+.r-prevention h4{color:var(--green)}
+.r-family{background:var(--lightorange);border-color:var(--orange)}
+.r-family h4{color:var(--orange)}
+.r-alert{background:var(--lightred);border-color:var(--red)}
+.r-alert h4{color:var(--red)}
+.key-msg{background:var(--card);border:2px solid var(--blue);border-radius:10px;padding:0.9rem 1rem;margin-top:1rem;text-align:center}
+.key-msg p{font-size:0.82rem;font-weight:600;color:var(--blue)}
+.key-msg .sub{font-size:0.7rem;font-weight:400;color:var(--gray);margin-top:0.2rem}
+.scenario-bar{display:flex;gap:5px;margin-bottom:1rem;flex-wrap:wrap}
+.scenario-btn{padding:0.4rem 0.7rem;border:1px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;font-size:0.68rem;color:var(--gray);font-family:inherit;transition:all 0.15s}
+.scenario-btn:hover{background:var(--lightblue);border-color:var(--blue);color:var(--blue)}
+.cancer-tabs{display:flex;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:4px;gap:4px;margin-bottom:1rem}
+.cancer-tab{flex:1;padding:0.7rem 0.5rem;border:none;background:transparent;font-family:inherit;font-size:0.85rem;font-weight:600;color:var(--gray);cursor:pointer;border-radius:7px;transition:all 0.2s}
+.cancer-tab.active{background:var(--blue);color:#fff}
+body[data-cancer="endometrial"] .ov-only{display:none}
+body[data-cancer="ovarian"] .em-only{display:none}
+footer{text-align:center;margin-top:1.5rem;padding-top:0.75rem;border-top:1px solid var(--border)}
+footer p{font-size:0.62rem;color:#b0aea5;line-height:1.5}
+.icon{font-size:1rem}
+</style>
+</head>
+<body data-cancer="ovarian">
+<div class="app">
+  <header>
+    <h1>Biomarker → 治療意思決定<br>シミュレーター</h1>
+    <p>東北大学医学部３年 　病理学Ⅱ　T. Takahashi</p>
+  </header>
+
+  <div class="cancer-tabs" id="cancerTabs">
+    <button class="cancer-tab active" onclick="setCancer('ovarian')">進行/再発 卵巣癌</button>
+    <button class="cancer-tab" onclick="setCancer('endometrial')">進行/再発 子宮体癌</button>
+  </div>
+
+  <div class="section-label">臨床シナリオ（プリセット）</div>
+  <div class="scenario-bar">
+    <button class="scenario-btn ov-only" onclick="scenario('hboc')">HBOC疑い</button>
+    <button class="scenario-btn ov-only" onclick="scenario('hrd_only')">HRD+/BRCA野生型</button>
+    <button class="scenario-btn ov-only" onclick="scenario('lynch')">Lynch疑い</button>
+    <button class="scenario-btn ov-only" onclick="scenario('negative')">全て陰性</button>
+    <button class="scenario-btn ov-only" onclick="scenario('vus')">VUSのみ</button>
+    <button class="scenario-btn em-only" onclick="scenario('em_msh2')">MSH2 Lynch</button>
+    <button class="scenario-btn em-only" onclick="scenario('em_mlh1')">MLH1メチル化疑い</button>
+    <button class="scenario-btn em-only" onclick="scenario('em_msh6')">MSH6 Lynch</button>
+    <button class="scenario-btn em-only" onclick="scenario('em_pmmr')">pMMR（正常）</button>
+    <button class="scenario-btn em-only" onclick="scenario('em_vus')">VUSのみ</button>
+  </div>
+
+  <div class="section-label">バイオマーカー入力</div>
+
+  <div class="input-card">
+    <h3><span class="icon">🧬</span> Germline BRCA1/2 <span class="tag tag-germ">生殖細胞系列</span></h3>
+    <div class="toggle-row" id="gbrca">
+      <button class="toggle-btn active" onclick="set('gbrca','neg')">陰性</button>
+      <button class="toggle-btn" onclick="set('gbrca','vus')">VUS</button>
+      <button class="toggle-btn" onclick="set('gbrca','pos')">病的変異</button>
+    </div>
+    <div class="sub-note">本人の生まれつきの変化。家族への波及あり。卵巣癌では治療選択にも重要。</div>
+  </div>
+
+  <div class="input-card ov-only">
+    <h3><span class="icon">🔬</span> Tumor BRCA <span class="tag tag-tumor">体細胞</span></h3>
+    <div class="toggle-row" id="tbrca">
+      <button class="toggle-btn active" onclick="set('tbrca','neg')">陰性</button>
+      <button class="toggle-btn" onclick="set('tbrca','pos')">P/LP 変異あり</button>
+    </div>
+    <div class="sub-note">腫瘍が後天的に獲得。治療判断には <b>P/LP（pathogenic / likely pathogenic：病的 / 病的疑い）</b>変異のみを用いる。VUSは治療判断に用いない。</div>
+  </div>
+
+  <div class="input-card ov-only">
+    <h3><span class="icon">📊</span> HRD score (GIS) <span class="tag tag-tumor">腫瘍</span></h3>
+    <div class="slider-row">
+      <input type="range" min="0" max="80" value="30" step="1" id="hrd" oninput="update()">
+      <span class="slider-val" id="hrd-val">30</span>
+    </div>
+    <div class="sub-note">myChoice CDx: ≥42で陽性。DNA修復不全の"痕跡"スコア。</div>
+  </div>
+
+  <div class="input-card">
+    <h3><span class="icon">🔍</span> MMR-IHC <span class="tag tag-ihc">免疫染色</span></h3>
+    <div id="mmr">
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="set('mmr','intact')">正常発現</button>
+        <button class="toggle-btn" onclick="set('mmr','mlh1')">MLH1+PMS2欠失</button>
+        <button class="toggle-btn" onclick="set('mmr','msh2')">MSH2+MSH6欠失</button>
+      </div>
+      <div class="toggle-row">
+        <button class="toggle-btn" onclick="set('mmr','pms2_only')">PMS2単独欠失</button>
+        <button class="toggle-btn" onclick="set('mmr','msh6_only')">MSH6単独欠失</button>
+      </div>
+    </div>
+    <div class="sub-note">Lynch拾い上げ＋免疫治療の適格性。子宮体癌ではユニバーサルスクリーニングの代表的入口であり、卵巣癌では特に clear cell / endometrioid / mucinous で重要。MMR 4タンパクはヘテロ2量体（MLH1-PMS2 / MSH2-MSH6）を形成するため、欠失パターンが原因遺伝子推定の手がかりになる。</div>
+  </div>
+
+  <div class="results" id="results"></div>
+
+  <div class="key-msg" id="keymsg">
+    <p>バイオマーカーの組み合わせで「次の一手」が変わる</p>
+    <div class="sub">スライダーやボタンを動かして確認してみてください</div>
+  </div>
+
+  <footer>
+    <p>
+      参考: ESGO Ovarian Cancer Pocket Guidelines 2025 / ESGO-ESTRO-ESP Endometrial Ca 2025 / ASCO Ovarian Testing 2020<br>
+      主要試験: SOLO-1 / PAOLA-1 / PRIMA / KEYNOTE-158 / KEYNOTE-775 / NRG-GY018 / RUBY<br>
+      東北大学医学部３年 　病理学Ⅱ　T. Takahashi
+    </p>
+  </footer>
+</div>
+
+<script>
+var state={gbrca:'neg',tbrca:'neg',hrd:30,mmr:'intact',cancerType:'ovarian'};
+
+function setCancer(type){
+  state.cancerType=type;
+  document.body.setAttribute('data-cancer', type);
+  document.querySelectorAll('#cancerTabs .cancer-tab').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('onclick').indexOf("'"+type+"'")>=0);
+  });
+  update();
+}
+
+function set(group,val){
+  state[group]=val;
+  document.querySelectorAll('#'+group+' .toggle-btn').forEach(function(b,i){
+    var vals={gbrca:['neg','vus','pos'],tbrca:['neg','pos'],mmr:['intact','mlh1','msh2','pms2_only','msh6_only']};
+    b.classList.toggle('active',vals[group][i]===val);
+  });
+  update();
+}
+
+function update(){
+  state.hrd=+document.getElementById('hrd').value;
+  document.getElementById('hrd-val').textContent=state.hrd;
+  render();
+}
+
+function scenario(s){
+  // --- 卵巣癌プリセット ---
+  if(s==='hboc'){set('gbrca','pos');set('tbrca','pos');document.getElementById('hrd').value=55;state.hrd=55;set('mmr','intact');}
+  if(s==='hrd_only'){set('gbrca','neg');set('tbrca','neg');document.getElementById('hrd').value=52;state.hrd=52;set('mmr','intact');}
+  if(s==='lynch'){set('gbrca','neg');set('tbrca','neg');document.getElementById('hrd').value=20;state.hrd=20;set('mmr','msh2');}
+  if(s==='negative'){set('gbrca','neg');set('tbrca','neg');document.getElementById('hrd').value=20;state.hrd=20;set('mmr','intact');}
+  if(s==='vus'){set('gbrca','vus');set('tbrca','neg');document.getElementById('hrd').value=25;state.hrd=25;set('mmr','intact');}
+  // --- 子宮体癌プリセット ---
+  if(s==='em_msh2'){set('gbrca','neg');set('tbrca','neg');document.getElementById('hrd').value=20;state.hrd=20;set('mmr','msh2');}
+  if(s==='em_mlh1'){set('gbrca','neg');set('tbrca','neg');document.getElementById('hrd').value=20;state.hrd=20;set('mmr','mlh1');}
+  if(s==='em_msh6'){set('gbrca','neg');set('tbrca','neg');document.getElementById('hrd').value=20;state.hrd=20;set('mmr','msh6_only');}
+  if(s==='em_pmmr'){set('gbrca','neg');set('tbrca','neg');document.getElementById('hrd').value=20;state.hrd=20;set('mmr','intact');}
+  if(s==='em_vus'){set('gbrca','vus');set('tbrca','neg');document.getElementById('hrd').value=20;state.hrd=20;set('mmr','intact');}
+  update();
+}
+
+function render(){
+  var html='';
+  var msg='';
+  var hrdPos=state.hrd>=42;
+  var brcaGerm=state.gbrca==='pos';
+  var brcaVUS=state.gbrca==='vus';
+  var brcaTumor=state.tbrca==='pos';
+  var mmrLoss=state.mmr!=='intact';
+
+  // Treatment
+  html+='<div class="result-card r-treatment"><h4><span class="icon">💊</span> 治療への影響</h4><ul>';
+  if(state.cancerType==='ovarian'){
+    if(brcaGerm||brcaTumor){
+      html+='<li><b>プラチナ奏効後の</b> PARP阻害薬（olaparib等）維持療法の重要な適応</li>';
+      html+='<li>Platinum感受性が期待される</li>';
+    } else if(hrdPos){
+      html+='<li>HRD陽性: olaparib+bevacizumab維持の<b>適応候補</b></li>';
+      html+='<li>BRCA野生型でもHRDスコアで恩恵あり（PAOLA-1: HR 0.43）</li>';
+    } else {
+      html+='<li>HRD陰性（GIS '+state.hrd+'）: PAOLA-1（olaparib + bev）では <b>上乗せ利益なし</b>（HR 1.00）</li>';
+      html+='<li>ただし PRIMA（niraparib 単剤維持）では HR-proficient 群でも <b>PFS 改善</b>（HR 0.68）</li>';
+      html+='<li>→ PARP阻害薬の効果は<b>レジメン依存</b>。標準化学療法±bevacizumabが基本</li>';
+    }
+    if(mmrLoss){
+      html+='<li>卵巣癌での dMMR 評価は特に <b>clear cell / endometrioid / mucinous</b> で重要。再発例では ICI を考慮</li>';
+    }
+  } else if(state.cancerType==='endometrial'){
+    if(mmrLoss){
+      html+='<li>dMMR / MSI-H: 免疫チェックポイント阻害薬（ICI）の<b>重要な適応</b></li>';
+      html+='<li>既治療 advanced / recurrent → <b>pembrolizumab 単剤</b> が選択肢</li>';
+      html+='<li>一次治療 primary advanced / recurrent → carboplatin / paclitaxel + <b>pembrolizumab</b> または <b>dostarlimab</b></li>';
+    } else {
+      html+='<li>pMMR / MSS: 標準化学療法（carboplatin / paclitaxel）が基本</li>';
+      html+='<li>primary advanced / recurrent では ICI 併用で <b>PFS 改善</b> が示されている</li>';
+      html+='<li>既治療 advanced / recurrent では <b>pembrolizumab + lenvatinib</b> が選択肢</li>';
+    }
+  }
+  html+='</ul></div>';
+
+  // Prevention
+  html+='<div class="result-card r-prevention"><h4><span class="icon">🛡️</span> 予防・長期管理への影響</h4><ul>';
+  if(state.cancerType==='ovarian'){
+    if(brcaGerm){
+      html+='<li><b>本人:</b> 遺伝性腫瘍として乳癌リスク評価・長期管理を考慮</li>';
+      html+='<li><b>未発症近親者・保因者:</b> RRSO や乳がんサーベイランス（MRI含む）を検討</li>';
+    } else if(brcaVUS){
+      html+='<li><b>本人/家族:</b> VUS のみで予防手術や強化サーベイランスは決めない</li>';
+      html+='<li>個人歴・家族歴に基づいて通常管理し、必要時に再評価する</li>';
+    } else {
+      html+='<li>BRCA1/2 陰性のみでは、他の遺伝性腫瘍を<b>完全には否定できない</b></li>';
+      html+='<li>個人歴・家族歴に応じて追加評価や通常の長期管理を考慮</li>';
+    }
+    if(mmrLoss){
+      html+='<li>Lynch が確認された場合は、本人および未発症保因者で大腸などのサーベイランス計画が重要</li>';
+    }
+  } else if(state.cancerType==='endometrial'){
+    if(mmrLoss){
+      html+='<li><b>本人:</b> Lynch が確認されれば、大腸など重複癌のサーベイランス計画が重要</li>';
+      html+='<li><b>未発症近親者・保因者:</b> Lynch 関連癌の予防・サーベイランス計画を検討</li>';
+    } else if(brcaVUS){
+      html+='<li><b>本人/家族:</b> VUS のみで管理方針は変えない</li>';
+      html+='<li>個人歴・家族歴に応じて通常管理し、再分類の可能性に備える</li>';
+    } else {
+      html+='<li>MMR 正常でも、個人歴・家族歴から遺伝性腫瘍が疑われる場合は追加評価を考慮</li>';
+    }
+  }
+  html+='</ul></div>';
+
+  // Family
+  html+='<div class="result-card r-family"><h4><span class="icon">👨‍👩‍👧</span> 家族・遺伝カウンセリング</h4><ul>';
+  if(brcaGerm){
+    html+='<li><b>近親者</b>へのカスケード検査を提案</li>';
+    html+='<li>遺伝カウンセリングへ<b>紹介</b></li>';
+  } else if(brcaVUS){
+    html+='<li>VUS での家族の予測的遺伝学的検査は<b>推奨されない</b></li>';
+    html+='<li>再分類の可能性があるため再連絡方法を設定</li>';
+  } else {
+    html+='<li>germline BRCA 陰性だけでは、他の遺伝性腫瘍を<b>完全には否定できない</b></li>';
+    html+='<li>家族歴に応じて追加評価を考慮</li>';
+  }
+  if(state.mmr==='msh2'){
+    html+='<li>MSH2+MSH6欠失 → Lynch疑い → 遺伝カウンセリング + <b>germline MSH2（+ EPCAM）検査</b></li>';
+    html+='<li>EPCAM 3\'末端欠失が MSH2 サイレンシングを起こしうるため MSH2 と併せて評価</li>';
+    html+='<li>陽性なら家族へのカスケード検査</li>';
+  }
+  if(state.mmr==='mlh1'){
+    html+='<li>MLH1+PMS2欠失 → まず MLH1 <b>methylation 検査</b></li>';
+    html+='<li>methylation(-)なら Lynch疑い → germline MLH1検査</li>';
+    html+='<li>methylation(+)なら sporadic → 家族検査は通常不要</li>';
+  }
+  if(state.mmr==='pms2_only'){
+    html+='<li>PMS2単独欠失 → Lynch疑い → 遺伝カウンセリング + <b>germline PMS2検査</b></li>';
+    html+='<li>PMS2 をまず疑うが、まれに例外もありうる</li>';
+    html+='<li>陽性なら家族へのカスケード検査</li>';
+  }
+  if(state.mmr==='msh6_only'){
+    html+='<li>MSH6単独欠失 → Lynch疑い → 遺伝カウンセリング + <b>germline MSH6検査</b></li>';
+    html+='<li>MSH6 関連 Lynch は<b>子宮体癌が比較的多い</b>のが特徴</li>';
+    html+='<li>陽性なら家族へのカスケード検査</li>';
+  }
+  html+='</ul></div>';
+
+  // Alert
+  if(brcaVUS){
+    html+='<div class="result-card r-alert"><h4><span class="icon">⚠️</span> VUSに関する注意</h4><ul>';
+    html+='<li>VUSは「診断名」ではなく「未確定の結果」</li>';
+    html+='<li>管理方針をVUSだけで変えない</li>';
+    html+='<li>将来の再分類で病的/良性が判明する可能性がある</li>';
+    html+='</ul></div>';
+  }
+
+  // Key message
+  if(state.cancerType==='ovarian'){
+    // --- 卵巣癌 key message（既存） ---
+    if(brcaGerm&&hrdPos){
+      msg='BRCA変異 + HRD陽性: 治療・予防・家族の<b>3方向全て</b>が動く';
+    } else if(hrdPos&&!brcaGerm&&!brcaTumor){
+      msg='BRCA野生型でもHRD陽性なら治療選択が変わる — <b>検査しないと分からない</b>';
+    } else if(!hrdPos&&!brcaGerm&&!mmrLoss){
+      msg='HRD陰性でも、レジメンで結果が変わる（PAOLA-1: HR 1.00 / PRIMA: HR 0.68）— <b>biomarker × レジメンで決まる</b>';
+    } else if(brcaVUS){
+      msg='VUSは「答え」ではなく「保留」— <b>管理を変えず、再評価を設計する</b>';
+    } else if(mmrLoss){
+      msg='MMR欠失は治療選択 <b>かつ</b> 家族医療の入口 — <b>1つの検査が2つの導線を開く</b>';
+    } else {
+      msg='バイオマーカーの組み合わせで「次の一手」が変わる';
+    }
+  } else if(state.cancerType==='endometrial'){
+    // --- 子宮体癌 key message ---
+    if(state.mmr==='mlh1'){
+      msg='MLH1+PMS2 欠失はまず <b>methylation 検査</b>で sporadic か Lynch かを切り分ける';
+    } else if(state.mmr==='msh6_only'){
+      msg='MSH6単独欠失は<b>子宮体癌で比較的多い Lynch パターン</b> — 婦人科で特に見逃さない';
+    } else if(mmrLoss){
+      msg='dMMR / MSI-H は治療選択 <b>かつ</b> 家族医療の入口 — <b>1つの検査が2つの導線を開く</b>';
+    } else if(brcaVUS){
+      msg='VUSは「答え」ではなく「保留」— <b>管理を変えず、再評価を設計する</b>';
+    } else {
+      msg='進行/再発子宮体癌では、MMR正常（pMMR）でも <b>ICI併用や既治療後の選択肢</b> を考える';
+    }
+  }
+
+  document.getElementById('results').innerHTML=html;
+  document.getElementById('keymsg').innerHTML='<p>'+msg+'</p><div class="sub">同じ腫瘍でも、検査結果で治療・予防・家族への対応が全て変わる</div>';
+}
+
+update();
+</script>
+</body>
+</html>
